@@ -185,4 +185,5 @@ UnityMediator is a framework that implements the Mediator pattern in a manner th
   <li>Factories/Pools</li>
   <li>Global context</li>
   <li>Resource storages</li>
+  <li>Scene invocation controll</li>
 </ul>
