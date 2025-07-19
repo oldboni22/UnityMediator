@@ -1,5 +1,8 @@
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
+using Pryanik.UnityMediator.SceneBinding;
 
 namespace Pryanik.UnityMediator.SceneInvocationManagement
 {
@@ -11,9 +14,14 @@ namespace Pryanik.UnityMediator.SceneInvocationManagement
     
     internal class SceneInvokerBuilder
     {
-        private SceneInvokerBuilder(SceneInvocationController controller) => _controller = controller;
-        
+        private SceneInvokerBuilder(SceneInvocationController controller, SceneMediatorContext context)
+        {
+            _controller = controller;
+            _context = context;
+        }
+
         private readonly SceneInvocationController _controller;
+        private readonly SceneMediatorContext _context;
         
         private readonly ConcurrentBag<InvocationEntry> _awakes = new ConcurrentBag<InvocationEntry>();
         private readonly ConcurrentBag<InvocationEntry> _starts = new ConcurrentBag<InvocationEntry>();
@@ -21,8 +29,8 @@ namespace Pryanik.UnityMediator.SceneInvocationManagement
         private readonly ConcurrentBag<InvocationEntry> _lateUpdates = new ConcurrentBag<InvocationEntry>();
         private readonly ConcurrentBag<InvocationEntry> _fixedUpdates = new ConcurrentBag<InvocationEntry>();
 
-        internal static SceneInvokerBuilder GetBuilder(SceneInvocationController controller)
-            => new SceneInvokerBuilder(controller);
+        internal static SceneInvokerBuilder GetBuilder(SceneInvocationController controller, SceneMediatorContext context)
+            => new SceneInvokerBuilder(controller, context);
         
         internal void AddAwake(IAwake item, ushort priority) => _awakes.Add( new InvocationEntry()
         {
@@ -52,6 +60,19 @@ namespace Pryanik.UnityMediator.SceneInvocationManagement
 
         internal void SetCollections()
         {
+            List<ConcurrentBag<InvocationEntry>> list = new()
+            {
+                _awakes,_starts,_updates,_lateUpdates,_fixedUpdates
+            };
+
+            Parallel.ForEach(list, bag =>
+            {
+                foreach (var item in bag)
+                {
+                    _context.AssignMediatorAttribute(item.Value);
+                }
+            });
+            
             _controller.SetCollections
             (
                 _awakes.OrderBy(entry => entry.Priority).Select(a => a.Value as IAwake),

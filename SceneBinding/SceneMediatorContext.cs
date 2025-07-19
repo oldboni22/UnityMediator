@@ -14,8 +14,6 @@ namespace Pryanik.UnityMediator.SceneBinding
     public sealed class SceneMediatorContext : MonoBehaviour
     {
         [SerializeField] private MediatorMonoInstaller[] _installers;
-
-        #nullable enable
         
         [SerializeField] private bool _addInvocationController;
         
@@ -40,7 +38,7 @@ namespace Pryanik.UnityMediator.SceneBinding
             gameObj.transform.SetParent(transform);
             var controller = gameObj.AddComponent<SceneInvocationController>();
 
-            var builder = SceneInvokerBuilder.GetBuilder(controller);
+            var builder = SceneInvokerBuilder.GetBuilder(controller,this);
             
             Parallel.ForEach(installers, installer =>
             {
@@ -74,7 +72,7 @@ namespace Pryanik.UnityMediator.SceneBinding
                 return;
             
             var type = instance.GetType();
-
+            
             var field = type.GetFields(
                 BindingFlags.Instance |
                 BindingFlags.Public |
