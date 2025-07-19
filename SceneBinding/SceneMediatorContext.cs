@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
+using JetBrains.Annotations;
 using Pryanik.UnityMediator.Global;
+using Pryanik.UnityMediator.SceneInvocationManagement;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
@@ -13,34 +15,64 @@ namespace Pryanik.UnityMediator.SceneBinding
     {
         [SerializeField] private MediatorMonoInstaller[] _installers;
 
+        #nullable enable
+        
+        [SerializeField] private bool _addInvocationController;
+        
         private Mediator _mediator = new Mediator();
         
         private void Awake()
-        {
-            var builder = MediatorBuilder.GetBuilder(_mediator,this);
-
-
+        { 
             var allInstallers = new List<MediatorMonoInstaller>();
-            
             allInstallers.AddRange(GlobalMediatorContext.Installers);
             allInstallers.AddRange(_installers);
+            
+            BindSignals(allInstallers);
+            
+            if(_addInvocationController)
+                BindInvocation(allInstallers);
+        }
 
-            Parallel.ForEach(allInstallers, installer =>
+        private void BindInvocation(IEnumerable<MediatorMonoInstaller> installers)
+        {
+            var gameObj = new GameObject("InvocationController");
+           
+            gameObj.transform.SetParent(transform);
+            var controller = gameObj.AddComponent<SceneInvocationController>();
+
+            var builder = SceneInvokerBuilder.GetBuilder(controller);
+            
+            Parallel.ForEach(installers, installer =>
             {
-                installer.Builder = builder;
+                installer.InvokerBuilder = builder;
+                installer.BindInvocationOrder();
+            });
+            
+            builder.SetCollections();
+            controller.InvokeAwake();
+        }
+        
+        private void BindSignals(IEnumerable<MediatorMonoInstaller> installers)
+        {
+            var builder = MediatorBuilder.GetBuilder(_mediator,this);
+            
+            Parallel.ForEach(installers, installer =>
+            {
+                installer.MediatorBuilder = builder;
                 installer.BindSignalHandlers();
             });
             
             _mediator.SetDictionary(builder.GetDictionary());
             
-
             Parallel.ForEach(GameObject.FindObjectsByType<MonoBehaviour>(FindObjectsSortMode.None),
                 AssignMediatorAttribute);
-
         }
         
         internal void AssignMediatorAttribute<T>(T instance)
         {
+            if(instance == null)
+                return;
+            
             var type = instance.GetType();
 
             var field = type.GetFields(
