@@ -89,7 +89,7 @@ namespace Pryanik.UnityMediator.SceneBinding
                 _cachedFieldInfo.Add(type, field);
             }
             
-            if (field == null || field.GetValue(instance) == null)
+            if (field == null || field.GetValue(instance) != null)
                 return;
             
             field.SetValue(instance,_mediator);
