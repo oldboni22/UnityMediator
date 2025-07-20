@@ -8,7 +8,7 @@ using UnityEngine;
 
 namespace Pryanik.UnityMediator.SceneBinding
 {
-    public enum SceneInvocationType
+    public enum SceneInvocationEvent
     {
         Awake,
         Start,
@@ -24,7 +24,11 @@ namespace Pryanik.UnityMediator.SceneBinding
         
 
         #region SignalBinding
-        public abstract void BindSignalHandlers();
+
+        public virtual void BindSignalHandlers()
+        {
+            
+        }
         
         protected void RegisterSignal<T>(ISignalHandler<T> handler)
             where T : Signal
@@ -53,44 +57,47 @@ namespace Pryanik.UnityMediator.SceneBinding
             MediatorBuilder.RegisterPool(func);
         }
         #endregion
-        
+
+
+        #region InvocationBinding
         public virtual void BindInvocationOrder()
         {
             
         }
 
-        protected void BindObjectInvocation<T>(T item, SceneInvocationType type, ushort priority = 100)
+        protected void BindObjectInvocation<T>(T item, SceneInvocationEvent @event, ushort priority = 100)
             where T : IUnitySceneInvoke
 
         {
-            switch (type)
+            switch (@event)
             {
-                case SceneInvocationType.Awake : 
+                case SceneInvocationEvent.Awake : 
                 {
                     InvokerBuilder.AddAwake(item as IAwake, priority);
                     break;
                 }
-                case SceneInvocationType.Start:
+                case SceneInvocationEvent.Start:
                 {
                     InvokerBuilder.AddStart(item as IStart, priority);
                     break;
                 }
-                case SceneInvocationType.Update:
+                case SceneInvocationEvent.Update:
                 {
                     InvokerBuilder.AddUpdate(item as IUpdate, priority);
                     break;
                 }
-                case SceneInvocationType.LateUpdate:
+                case SceneInvocationEvent.LateUpdate:
                 {
                     InvokerBuilder.AddFixedUpdate(item as IFixedUpdate, priority);
                     break;
                 }
-                case SceneInvocationType.FixedUpdate:
+                case SceneInvocationEvent.FixedUpdate:
                 {
                     InvokerBuilder.AddFixedUpdate(item as IFixedUpdate, priority);
                     break;
                 }
             }
         }
+        #endregion
     }
 }

@@ -1,4 +1,4 @@
-UnityMediator is a framework that implements the Mediator pattern in a manner that will be very familliar for ZenJect users.
+UnityMediator is a framework that implements the Mediator pattern in a manner that will be very familiar for ZenJect users.
 
 <br>
 
@@ -22,7 +22,7 @@ UnityMediator is a framework that implements the Mediator pattern in a manner th
   <li><B>Disadvantages</B>
     <ul>
       <li>Every action/function call requires a pair of signal/handler classes that represent/handle that call.</li>
-      <li>The mediator becomes the "god object". While direct couplig is eliminated completely, any objects, that has any dependencies must rely on the mediator object.</li>
+      <li>The mediator becomes the "god object". While direct coupling is eliminated completely, any objects, that has any dependencies must rely on the mediator object.</li>
     </ul>
   </li>
 </ul>    
@@ -37,15 +37,15 @@ UnityMediator is a framework that implements the Mediator pattern in a manner th
         <li>
           Start by creating an empty object on your scene. Attach a <B>SceneMediatorContext</B> to it. <br><br>
           <img width="361" height="297" alt="image" src="https://github.com/user-attachments/assets/afb57e84-e71a-4527-bf31-95877283744d" /><br><br>
-          The <B>SceneMediatorContext</B> is simmilar to Zenject's <B>Scene context</B>. 
+          The <B>SceneMediatorContext</B> is similar to Zenject's <B>Scene context</B>. 
           It Executes all the provided <B>MediatorMonoInstallers</B> as well as installers thar are stored in <B>GlobalMediatorContext</B>. <br>
-          <B>This part is the most crucial one. Without it, the mediator won't be instatiated.</B>
+          <B>This part is the most crucial one. Without it, the mediator won't be instantiated.</B>
         </li>
         <li>
           Then you'll need to register desired signals with their handlers.<br>
           Let's start with creating the signal : <br>
          <code>public class ExampleSignal : Signal{}</code> <br>
-          Any signal has to inhert from the <B>Signal</B> class.<br>
+          Any signal has to inherit from the <B>Signal</B> class.<br>
           If you need to <B>pass some parameters</B> to the handler, list them in the signal class : <br><br>
           <code>public class ExampleSignal : Signal
     {                                 
@@ -111,11 +111,11 @@ UnityMediator is a framework that implements the Mediator pattern in a manner th
         public override void BindSignalHandlers()
         {
             var handlerInstance = new ExampleSignalHandler();
-            RegisterSignal<ExampleSignal>(handlerInstance);
+            RegisterSignalExampleSignal&lt;ExampleSignal&gt;(handlerInstance);
         }
     }</code><br><br>
-          Note, that all of the registration logic should be invoked in <B>BindSignalHandlers</B>.<br> 
-          If you want to organise the binding process, you can use diffrent <B>MediatorInstaller</B> classes. 
+          Note, that all the registration logic should be invoked in <B>BindSignalHandlers</B>.<br> 
+          If you want to organise the binding process, you can use different <B>MediatorInstaller</B> classes. 
           But you can also split the binding within a single installer with different registration methods, then you should call all of them from the <B>BindSignalHandlers method : </B> <br><br>
           <code>public class ExampleInstaller : MediatorMonoInstaller
     {
@@ -127,12 +127,12 @@ UnityMediator is a framework that implements the Mediator pattern in a manner th
         private void BindGroupA()
         {
             var handlerInstance = new ExampleSignalHandler();
-            RegisterSignal<ExampleSignal>(handlerInstance);
+            RegisterSignal&lt;ExampleSignal&gt;(handlerInstance);
         }
         private void BindGroupB()
         {
             var handlerInstance2 = new ExampleSignalHandler2();
-            RegisterSignal<ExampleSignal2>(handlerInstance2);
+            RegisterSignal&lt;ExampleSignal2&gt;(handlerInstance2);
         }
     }</code><br><br>
     The final step is creating the object with an instance of our Example installer.
@@ -151,7 +151,7 @@ UnityMediator is a framework that implements the Mediator pattern in a manner th
     To use the mediator, our objects have to have a reference to the Mediator object. 
     To get the reference, you need to use the <B>[Mediator]</B> attribute. 
     It works exactly like the <B>[Inject]</B> attribute in Zenject.
-    All the MonoBehaviour sctipts that have a field like <code>[Mediator] private _mediator;</code>, will get the reference to the Mediator object writen in that filed.
+    All the MonoBehaviour scripts that have a field like <code>[Mediator] private _mediator;</code>, will get the reference to the Mediator object written in that filed.
     Also, any object(not necessarily MonoBehaviour), that goes through the registration, automatically gets the [Mediator] field filled, if it has one.  
     As mentioned earlier, any object, created with built-in factory or pool, also gets the reference to the Mediator object.
       </li>
@@ -174,16 +174,40 @@ UnityMediator is a framework that implements the Mediator pattern in a manner th
         <img width="1155" height="285" alt="image" src="https://github.com/user-attachments/assets/a17fcd29-a401-47c4-960f-45197eada9c4" /> <br><br>
       And that's it. We now have a system, that allows objects to communicate between each other without any direct coupling.
       </li>
-    <ul>
+    </ul>
   </li>
 </ul>
+
+
+<br><br><br>
+
+<B>Scene invocation control</B><br>
+The scene invocation controller creates a single point for unity event invocation (Awake,Update, etc...).
+As a part of Mediator project, it also integrates with my implementation of mediator as well.
+But the biggest advantage of using it is an <B>easy way of giving non-monobehaviour classes unity event methods.</B>
+
+<br>
+
+<B>How to use?</B><br>
+
+The preparation process if quite simple, 
+if you already have a <B>MediatorSceneContext</B> and a <B>MediatorMonoInstaller</B> in your scene.
+To enable invocation control you need to check the <B>Use invocation controller</B> field in <B>MediatorSceneContext</B>. Now, we can bind the invocation in any <B>MediatorMonoInstaller</B>.<br>
+The class, that you want to bind, must implement any interface, that implements one of <B>IUnitySceneInvoke</B> interfaces.
+There are 5 interfaces, each one reflect a unity event : <B>IAwake, IStart, IUpdate, ILateUpdate, IFixedUpdate</B>.<br>
+And now we are ready for binding. The binding process happens in <B>BindInvocationOrder</B> method, to bind invocation, we need to call <br>
+<code>protected void BindObjectInvocation&lt;T&gt;(T item, SceneInvocationEvent @event, ushort priority = 100)
+where T : IUnitySceneInvoke</code><br>
+Where SceneInvocationEvent reflects the desired unity event 
+and where the lover the priority, the sooner the invocation will occur. 
+
 
 <br><br><br>
 <b>To be continued : </b>
 <ul>
+  <li>More details about invocation control with examples</li>
   <li>ValueSignals</li>
   <li>Factories/Pools</li>
   <li>Global context</li>
   <li>Resource storages</li>
-  <li>Scene invocation controll</li>
 </ul>

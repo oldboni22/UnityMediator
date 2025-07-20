@@ -13,6 +13,8 @@ namespace Pryanik.UnityMediator.SceneBinding
 {
     public sealed class SceneMediatorContext : MonoBehaviour
     {
+        private static readonly Dictionary<Type, FieldInfo> _cachedFieldInfo = new(); 
+        
         [SerializeField] private MediatorMonoInstaller[] _installers;
         
         [SerializeField] private bool _addInvocationController;
@@ -72,17 +74,22 @@ namespace Pryanik.UnityMediator.SceneBinding
                 return;
             
             var type = instance.GetType();
+
+            if (_cachedFieldInfo.TryGetValue(type, out var field) is false)
+            {
+                field = type.GetFields(
+                        BindingFlags.Instance |
+                        BindingFlags.Public |
+                        BindingFlags.NonPublic).
+                        FirstOrDefault(f =>
+                        Attribute.IsDefined(f, typeof(MediatorAttribute)) &&
+                        f.FieldType == typeof(Mediator));
+
+
+                _cachedFieldInfo.Add(type, field);
+            }
             
-            var field = type.GetFields(
-                BindingFlags.Instance |
-                BindingFlags.Public |
-                BindingFlags.NonPublic).
-                FirstOrDefault(f =>
-                Attribute.IsDefined(f, typeof(MediatorAttribute)) &&
-                f.FieldType == typeof(Mediator) &&
-                f.GetValue(instance) == null);
-            
-            if (field == null)
+            if (field == null || field.GetValue(instance) == null)
                 return;
             
             field.SetValue(instance,_mediator);
