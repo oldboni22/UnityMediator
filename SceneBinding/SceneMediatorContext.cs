@@ -13,7 +13,7 @@ namespace Pryanik.UnityMediator.SceneBinding
 {
     public sealed class SceneMediatorContext : MonoBehaviour
     {
-        private static readonly Dictionary<Type, FieldInfo> _cachedFieldInfo = new(); 
+        private static Dictionary<Type, FieldInfo> _cachedFieldInfo = new(); 
         
         [SerializeField] private MediatorMonoInstaller[] _installers;
         
