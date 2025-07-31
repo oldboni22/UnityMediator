@@ -14,4 +14,4 @@
 #Unity-generated files
 *.meta
 *.asmdef
-*.DS_Store
+.DS_Store
